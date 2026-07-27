@@ -15,6 +15,7 @@ class Settings(BaseSettings):
     ollama_embed_model: str = "nomic-embed-text"
 
     telegram_bot_token: str
+    telegram_chat_id: str | None = None
 
 
 @lru_cache
