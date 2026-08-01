@@ -3,6 +3,7 @@ from telegram.ext import ContextTypes
 
 from app.database.models import Feedback
 from app.database.session import AsyncSessionLocal
+from app.evaluation.evaluator import evaluate_message
 from app.services.chat_service import handle_chat_message
 from app.services.knowledge_service import ingest_document
 
@@ -46,9 +47,16 @@ async def handle_feedback(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
     await query.answer()
 
     _, message_id, vote = query.data.split(":")
+    message_id = int(message_id)
+    is_positive = vote == "up"
+
     async with AsyncSessionLocal() as db:
-        db.add(Feedback(message_id=int(message_id), is_positive=(vote == "up")))
+        db.add(Feedback(message_id=message_id, is_positive=is_positive))
         await db.commit()
 
     await query.edit_message_reply_markup(reply_markup=None)
     await query.message.reply_text("Thanks for your feedback!")
+
+    if not is_positive:
+        async with AsyncSessionLocal() as db:
+            await evaluate_message(db, message_id)

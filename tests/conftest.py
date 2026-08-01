@@ -3,8 +3,8 @@ import os
 import tempfile
 
 _db_fd, _db_path = tempfile.mkstemp(suffix=".db")
-os.environ.setdefault("DATABASE_URL", f"sqlite+aiosqlite:///{_db_path}")
-os.environ.setdefault("TELEGRAM_BOT_TOKEN", "test-token")
+os.environ["DATABASE_URL"] = f"sqlite+aiosqlite:///{_db_path}"
+os.environ["TELEGRAM_BOT_TOKEN"] = "test-token"
 atexit.register(os.remove, _db_path)
 
 from unittest.mock import AsyncMock, patch  # noqa: E402

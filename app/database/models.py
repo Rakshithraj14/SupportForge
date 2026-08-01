@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import ForeignKey, func
+from sqlalchemy import JSON, ForeignKey, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database.session import Base
@@ -25,10 +25,14 @@ class Message(Base):
     conversation_id: Mapped[int] = mapped_column(ForeignKey("conversations.id"))
     role: Mapped[str]
     content: Mapped[str]
+    context: Mapped[list[str] | None] = mapped_column(JSON, default=None)
     created_at: Mapped[datetime] = mapped_column(server_default=func.now())
 
     conversation: Mapped["Conversation"] = relationship(back_populates="messages")
     feedback: Mapped["Feedback | None"] = relationship(
+        back_populates="message", cascade="all, delete-orphan"
+    )
+    evaluation: Mapped["Evaluation | None"] = relationship(
         back_populates="message", cascade="all, delete-orphan"
     )
 
@@ -53,3 +57,17 @@ class Feedback(Base):
     created_at: Mapped[datetime] = mapped_column(server_default=func.now())
 
     message: Mapped["Message"] = relationship(back_populates="feedback")
+
+
+class Evaluation(Base):
+    __tablename__ = "evaluations"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    message_id: Mapped[int] = mapped_column(ForeignKey("messages.id"), unique=True)
+    faithfulness: Mapped[float]
+    hallucination: Mapped[float]
+    context_precision: Mapped[float]
+    context_recall: Mapped[float]
+    evaluated_at: Mapped[datetime] = mapped_column(server_default=func.now())
+
+    message: Mapped["Message"] = relationship(back_populates="evaluation")

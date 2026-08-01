@@ -28,7 +28,10 @@ async def handle_chat_message(db: AsyncSession, chat_id: str, question: str) -> 
     result = await workflow.ainvoke({"question": question, "context": [], "answer": ""})
 
     assistant_message = Message(
-        conversation_id=conversation.id, role="assistant", content=result["answer"]
+        conversation_id=conversation.id,
+        role="assistant",
+        content=result["answer"],
+        context=result["context"],
     )
     db.add(assistant_message)
     await db.commit()
