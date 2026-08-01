@@ -1,8 +1,9 @@
 from app.rag.embedder import embed_query
-from app.rag.indexer import COLLECTION_NAME, get_qdrant_client
+from app.rag.indexer import COLLECTION_NAME, ensure_collection, get_qdrant_client
 
 
 async def search(query: str, top_k: int = 5) -> list[str]:
+    await ensure_collection()
     client = get_qdrant_client()
     query_vector = await embed_query(query)
     response = await client.query_points(

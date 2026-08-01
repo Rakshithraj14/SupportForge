@@ -4,13 +4,20 @@ from fastapi import FastAPI
 
 from app.api import chat, health, knowledge
 from app.database.session import Base, engine
+from app.telegram.bot import build_bot, start_polling, stop_polling
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
-    yield
+
+    bot = build_bot()
+    await start_polling(bot)
+    try:
+        yield
+    finally:
+        await stop_polling(bot)
 
 
 app = FastAPI(title="SupportForge", lifespan=lifespan)
