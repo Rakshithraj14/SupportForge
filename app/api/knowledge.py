@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, File, UploadFile
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database.session import get_db
@@ -13,9 +13,12 @@ async def upload_knowledge(
     file: UploadFile = File(...), db: AsyncSession = Depends(get_db)
 ) -> KnowledgeUploadResponse:
     content = await file.read()
-    document = await ingest_document(
-        db, filename=file.filename, content_type=file.content_type, content=content
-    )
+    try:
+        document = await ingest_document(
+            db, filename=file.filename, content_type=file.content_type, content=content
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
     return KnowledgeUploadResponse(
         document_id=document.id,
         filename=document.filename,
