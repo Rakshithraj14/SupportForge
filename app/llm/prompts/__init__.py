@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from sqlalchemy import select
+from sqlalchemy import func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database.models import PromptVersion
@@ -26,6 +26,23 @@ async def get_active_prompt(db: AsyncSession, name: str = "support") -> PromptVe
         await db.commit()
         await db.refresh(prompt_version)
     return prompt_version
+
+
+async def set_active_prompt(db: AsyncSession, content: str, name: str = "support") -> PromptVersion:
+    await db.execute(
+        update(PromptVersion)
+        .where(PromptVersion.name == name, PromptVersion.active.is_(True))
+        .values(active=False)
+    )
+    max_version = (
+        await db.execute(select(func.max(PromptVersion.version)).where(PromptVersion.name == name))
+    ).scalar() or 0
+
+    new_version = PromptVersion(name=name, version=max_version + 1, content=content, active=True)
+    db.add(new_version)
+    await db.commit()
+    await db.refresh(new_version)
+    return new_version
 
 
 def build_user_prompt(question: str, context_chunks: list[str]) -> str:
