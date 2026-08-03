@@ -44,20 +44,6 @@
           "legendFormat": "{{type}}"
         }
       ]
-    },
-    {
-      "id": 4,
-      "title": "Evaluation score trends",
-      "description": "Requires a Postgres datasource named \"Postgres\" pointing at host.docker.internal:5432 (add manually via Grafana UI — credentials change too often for this to be safely checked into git).",
-      "type": "timeseries",
-      "datasource": { "type": "postgres", "uid": "postgres" },
-      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 16 },
-      "targets": [
-        {
-          "rawSql": "SELECT evaluated_at AS time, faithfulness, hallucination, context_precision, context_recall FROM evaluations ORDER BY evaluated_at",
-          "format": "time_series"
-        }
-      ]
     }
   ]
 }
