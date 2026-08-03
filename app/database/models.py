@@ -71,3 +71,14 @@ class Evaluation(Base):
     evaluated_at: Mapped[datetime] = mapped_column(server_default=func.now())
 
     message: Mapped["Message"] = relationship(back_populates="evaluation")
+
+
+class PromptVersion(Base):
+    __tablename__ = "prompt_versions"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str] = mapped_column(index=True)
+    version: Mapped[int]
+    content: Mapped[str]
+    active: Mapped[bool] = mapped_column(default=False)
+    created_at: Mapped[datetime] = mapped_column(server_default=func.now())

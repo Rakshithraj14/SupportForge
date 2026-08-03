@@ -17,6 +17,10 @@ class Settings(BaseSettings):
     telegram_bot_token: str
     telegram_chat_id: str | None = None
 
+    langfuse_public_key: str | None = None
+    langfuse_secret_key: str | None = None
+    langfuse_base_url: str = "https://cloud.langfuse.com"
+
 
 @lru_cache
 def get_settings() -> Settings:
