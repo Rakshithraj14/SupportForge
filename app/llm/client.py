@@ -3,6 +3,7 @@ from functools import lru_cache
 import httpx
 
 from app.config import get_settings
+from app.monitoring.prometheus import CHAT_TOKENS
 
 
 class OllamaClient:
@@ -17,7 +18,14 @@ class OllamaClient:
             json={"model": self.chat_model, "messages": messages, "stream": False},
         )
         response.raise_for_status()
-        return response.json()["message"]["content"]
+        body = response.json()
+
+        if "prompt_eval_count" in body:
+            CHAT_TOKENS.labels(type="prompt").observe(body["prompt_eval_count"])
+        if "eval_count" in body:
+            CHAT_TOKENS.labels(type="completion").observe(body["eval_count"])
+
+        return body["message"]["content"]
 
     async def embed(self, text: str) -> list[float]:
         response = await self._http.post(

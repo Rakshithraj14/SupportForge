@@ -1,0 +1,63 @@
+{
+  "title": "SupportForge",
+  "uid": "supportforge",
+  "schemaVersion": 39,
+  "version": 1,
+  "editable": true,
+  "time": { "from": "now-24h", "to": "now" },
+  "panels": [
+    {
+      "id": 1,
+      "title": "HTTP request latency (p95)",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[5m])) by (le, path))",
+          "legendFormat": "{{path}}"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "title": "Request rate by path",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "targets": [
+        {
+          "expr": "sum(rate(http_request_duration_seconds_count[5m])) by (path)",
+          "legendFormat": "{{path}}"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "title": "Chat token usage (avg)",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "targets": [
+        {
+          "expr": "rate(chat_tokens_sum[5m]) / rate(chat_tokens_count[5m])",
+          "legendFormat": "{{type}}"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "title": "Evaluation score trends",
+      "description": "Requires a Postgres datasource named \"Postgres\" pointing at host.docker.internal:5432 (add manually via Grafana UI — credentials change too often for this to be safely checked into git).",
+      "type": "timeseries",
+      "datasource": { "type": "postgres", "uid": "postgres" },
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 16 },
+      "targets": [
+        {
+          "rawSql": "SELECT evaluated_at AS time, faithfulness, hallucination, context_precision, context_recall FROM evaluations ORDER BY evaluated_at",
+          "format": "time_series"
+        }
+      ]
+    }
+  ]
+}
