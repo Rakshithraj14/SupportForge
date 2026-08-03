@@ -3,9 +3,11 @@ from telegram.ext import ContextTypes
 
 from app.database.models import Feedback
 from app.database.session import AsyncSessionLocal
-from app.evaluation.evaluator import evaluate_message
+from app.rag.loader import is_supported_file
 from app.services.chat_service import handle_chat_message
-from app.services.knowledge_service import ingest_document
+from app.services.knowledge_service import create_pending_document
+from app.workers.evaluation import evaluate_message_task
+from app.workers.ingestion import ingest_document_task
 
 
 async def handle_text_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -27,19 +29,23 @@ async def handle_text_message(update: Update, context: ContextTypes.DEFAULT_TYPE
 
 
 async def handle_document(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    filename = update.message.document.file_name
+
+    if not is_supported_file(filename):
+        await update.message.reply_text(f"Unsupported file type: {filename}")
+        return
+
     telegram_file = await update.message.document.get_file()
     content = bytes(await telegram_file.download_as_bytearray())
-    filename = update.message.document.file_name
     content_type = update.message.document.mime_type or "application/octet-stream"
 
     async with AsyncSessionLocal() as db:
-        document = await ingest_document(
+        document, file_path = await create_pending_document(
             db, filename=filename, content_type=content_type, content=content
         )
+    ingest_document_task.delay(document.id, document.filename, file_path)
 
-    await update.message.reply_text(
-        f"Indexed '{document.filename}' into {document.chunk_count} chunks."
-    )
+    await update.message.reply_text(f"Got '{document.filename}' — indexing it now.")
 
 
 async def handle_feedback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -58,5 +64,4 @@ async def handle_feedback(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
     await query.message.reply_text("Thanks for your feedback!")
 
     if not is_positive:
-        async with AsyncSessionLocal() as db:
-            await evaluate_message(db, message_id)
+        evaluate_message_task.delay(message_id)
