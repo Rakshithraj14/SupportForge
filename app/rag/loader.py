@@ -12,6 +12,10 @@ def load_markdown(content: bytes) -> str:
     return content.decode("utf-8")
 
 
+def is_supported_file(filename: str) -> bool:
+    return filename.lower().endswith((".pdf", ".md", ".markdown", ".txt"))
+
+
 def load_document(filename: str, content: bytes) -> str:
     if filename.lower().endswith(".pdf"):
         return load_pdf(content)
